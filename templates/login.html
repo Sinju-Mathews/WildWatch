@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WildWatch — Sign In</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --forest: #1b4332;
+      --forest-mid: #2d6a4f;
+      --forest-light: #40916c;
+      --leaf: #52b788;
+      --leaf-bright: #74c69d;
+      --cream: #f8f4ed;
+      --text-dark: #1a2e1f;
+      --text-mid: #3d6b4f;
+      --text-light: #74a882;
+      --amber: #e9c46a;
+      --danger: #e63946;
+    }
+
+    html,
+    body {
+      height: 100%;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    body {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      min-height: 100vh;
+      background: var(--forest);
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+      padding: 24px 16px;
+    }
+
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .bg-gradient {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 80%, rgba(64, 145, 108, .35) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(27, 67, 50, .8) 0%, transparent 50%),
+        linear-gradient(160deg, #0d2818 0%, #1b4332 40%, #2d6a4f 100%);
+    }
+
+    .firefly {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(233, 196, 106, .9);
+      box-shadow: 0 0 6px 2px rgba(233, 196, 106, .5);
+      animation: fly linear infinite;
+    }
+
+    @keyframes fly {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0;
+      }
+
+      10% {
+        opacity: 1;
+      }
+
+      50% {
+        transform: translate(var(--dx), var(--dy)) scale(1.3);
+        opacity: .8;
+      }
+
+      90% {
+        opacity: .5;
+      }
+
+      100% {
+        transform: translate(calc(var(--dx)*2), calc(var(--dy)*1.5)) scale(.5);
+        opacity: 0;
+      }
+    }
+
+    .treeline {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 220px;
+      opacity: .18;
+    }
+
+    /* ── Card ── */
+    .card {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 460px;
+      background: rgba(255, 255, 255, .94);
+      border-radius: 24px;
+      box-shadow: 0 24px 64px rgba(27, 67, 50, .22), 0 0 0 1px rgba(82, 183, 136, .12);
+      overflow: hidden;
+      animation: cardIn .6s cubic-bezier(.34, 1.56, .64, 1) both;
+      backdrop-filter: blur(20px);
+      margin: auto 0;
+    }
+
+    @keyframes cardIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px) scale(.96);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .card-top {
+      background: linear-gradient(135deg, var(--forest) 0%, var(--forest-mid) 100%);
+      padding: 28px 36px 22px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-top::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: rgba(82, 183, 136, .15);
+    }
+
+    .card-top::after {
+      content: '';
+      position: absolute;
+      bottom: -30px;
+      left: -30px;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: rgba(233, 196, 106, .08);
+    }
+
+    .brand-icon {
+      width: 58px;
+      height: 58px;
+      background: rgba(255, 255, 255, .1);
+      border-radius: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      border: 1px solid rgba(255, 255, 255, .15);
+      font-size: 1.8rem;
+    }
+
+    .brand-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.85rem;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: .02em;
+    }
+
+    .brand-tagline {
+      font-size: .74rem;
+      color: var(--leaf-bright);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    /* ── Role tabs ── */
+    .role-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: #f0f4f1;
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 18px;
+    }
+
+    .role-tab {
+      padding: 9px 8px;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-family: 'Nunito', sans-serif;
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--text-light);
+      transition: all .25s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .role-tab.active {
+      background: #fff;
+      color: var(--forest);
+      box-shadow: 0 2px 8px rgba(27, 67, 50, .12);
+    }
+
+    .card-body {
+      padding: 22px 30px 26px;
+    }
+
+    .error-msg {
+      background: #fde8ea;
+      border: 1px solid #f5b8bc;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: .81rem;
+      color: var(--danger);
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .success-msg {
+      background: rgba(82, 183, 136, .1);
+      border: 1px solid rgba(82, 183, 136, .35);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: .81rem;
+      color: var(--forest-mid);
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    /* ── Form fields ── */
+    .field-group {
+      margin-bottom: 12px;
+    }
+
+    .field-label {
+      display: block;
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--text-mid);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .field-wrap {
+      position: relative;
+    }
+
+    .field-icon {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: .92rem;
+      pointer-events: none;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="tel"],
+    select {
+      width: 100%;
+      padding: 11px 11px 11px 38px;
+      border: 1.5px solid #dde8e2;
+      border-radius: 11px;
+      font-family: 'Nunito', sans-serif;
+      font-size: .91rem;
+      color: var(--text-dark);
+      background: #fafdfc;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--leaf);
+      box-shadow: 0 0 0 3px rgba(82, 183, 136, .15);
+      background: #fff;
+    }
+
+    /* Two-column row for name + phone */
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* Zone dropdown arrow fix */
+    .select-wrap {
+      position: relative;
+    }
+
+    .select-wrap::after {
+      content: '▾';
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: .85rem;
+      color: var(--text-light);
+      pointer-events: none;
+    }
+
+    select {
+      padding-right: 32px;
+    }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--forest-mid) 0%, var(--forest-light) 100%);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Nunito', sans-serif;
+      font-size: .97rem;
+      font-weight: 800;
+      letter-spacing: .04em;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: transform .15s, box-shadow .2s;
+      box-shadow: 0 4px 20px rgba(45, 106, 79, .4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(45, 106, 79, .5);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ── Switch link ── */
+    .switch-link {
+      text-align: center;
+      margin-top: 14px;
+      font-size: .77rem;
+      color: var(--text-light);
+      font-weight: 600;
+    }
+
+    .switch-link a {
+      color: var(--forest-mid);
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      border-bottom: 1.5px solid rgba(45, 106, 79, .25);
+      transition: border-color .15s;
+    }
+
+    .switch-link a:hover {
+      border-color: var(--forest-mid);
+    }
+
+    .footer-note {
+      text-align: center;
+      margin-top: 14px;
+      font-size: .67rem;
+      color: var(--text-light);
+      line-height: 1.6;
+    }
+
+    /* Panel transitions */
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+      animation: panelIn .3s ease;
+    }
+
+    @keyframes panelIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 4px 0 12px;
+      color: var(--text-light);
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #dde8e2;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="bg-layer">
+    <div class="bg-gradient"></div>
+    <div class="firefly" style="width:4px;height:4px;left:15%;top:30%;--dx:80px;--dy:-60px;animation-duration:7s;">
+    </div>
+    <div class="firefly"
+      style="width:3px;height:3px;left:75%;top:55%;--dx:-50px;--dy:-80px;animation-duration:9s;animation-delay:2s;">
+    </div>
+    <div class="firefly"
+      style="width:5px;height:5px;left:45%;top:20%;--dx:60px;--dy:70px;animation-duration:8s;animation-delay:1s;"></div>
+    <div class="firefly"
+      style="width:4px;height:4px;left:85%;top:70%;--dx:-90px;--dy:-40px;animation-duration:11s;animation-delay:3s;">
+    </div>
+    <div class="firefly"
+      style="width:3px;height:3px;left:25%;top:65%;--dx:100px;--dy:-50px;animation-duration:10s;animation-delay:4s;">
+    </div>
+    <div class="firefly"
+      style="width:4px;height:4px;left:60%;top:40%;--dx:-70px;--dy:60px;animation-duration:6s;animation-delay:1.5s;">
+    </div>
+    <svg class="treeline" viewBox="0 0 1440 220" preserveAspectRatio="none" fill="white"
+      xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M0,220 L0,160 L40,100 L70,130 L90,60 L120,100 L140,40 L170,80 L190,20 L220,70 L250,30 L280,80 L310,50 L340,100 L380,40 L410,90 L440,20 L470,70 L510,10 L540,60 L570,0 L600,50 L630,20 L660,80 L700,40 L730,90 L760,30 L790,80 L820,10 L850,60 L880,0 L910,50 L950,20 L980,70 L1010,40 L1040,100 L1070,50 L1100,80 L1140,20 L1170,70 L1200,40 L1230,90 L1260,60 L1290,110 L1320,70 L1360,120 L1390,90 L1420,140 L1440,160 L1440,220 Z" />
+    </svg>
+  </div>
+
+  <div class="card" id="mainCard">
+    <div class="card-top">
+      <div class="brand-icon">🦁</div>
+      <div class="brand-name">WildWatch</div>
+      <div class="brand-tagline">Wildlife Monitoring &amp; Alert System</div>
+    </div>
+
+    <div class="card-body">
+
+      <!-- ══ SIGN IN PANEL ══ -->
+      <div class="panel active" id="panel-login">
+
+        <!-- Role tabs -->
+        <div class="role-tabs">
+          <button class="role-tab active" id="tab-officer" onclick="switchRole('officer')">🛡️ Forest Officer</button>
+          <button class="role-tab" id="tab-user" onclick="switchRole('user')">🏘️ Resident / Public</button>
+        </div>
+
+        <div class="error-msg" id="loginError">Incorrect credentials. Please try again.</div>
+
+        <div class="field-group">
+          <label class="field-label">Username</label>
+          <div class="field-wrap">
+            <span class="field-icon">👤</span>
+            <input type="text" id="loginUsername" placeholder="Enter your username" autocomplete="username">
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Password</label>
+          <div class="field-wrap">
+            <span class="field-icon">🔒</span>
+            <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password">
+          </div>
+        </div>
+
+        <button class="btn-primary" id="loginBtn" onclick="doLogin()">Sign In →</button>
+
+        <div class="switch-link">
+          New resident? <a onclick="switchMode('register')">Create an account</a>
+        </div>
+        <div class="footer-note">Kerala Forest Department · Erattupetta Range<br>© 2025 WildWatch · Authorised use only
+        </div>
+      </div>
+
+      <!-- ══ SIGN UP PANEL ══ -->
+      <div class="panel" id="panel-register">
+
+        <div class="error-msg" id="regError">Something went wrong. Please try again.</div>
+        <div class="success-msg" id="regSuccess">✅ Account created! You can now sign in.</div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Full Name</label>
+            <div class="field-wrap">
+              <span class="field-icon">🪪</span>
+              <input type="text" id="regName" placeholder="Your full name" autocomplete="name">
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Phone No.</label>
+            <div class="field-wrap">
+              <span class="field-icon">📱</span>
+              <input type="tel" id="regPhone" placeholder="10-digit number" autocomplete="tel" maxlength="15">
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Username</label>
+          <div class="field-wrap">
+            <span class="field-icon">👤</span>
+            <input type="text" id="regUsername" placeholder="Choose a username" autocomplete="username">
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Password</label>
+          <div class="field-wrap">
+            <span class="field-icon">🔒</span>
+            <input type="password" id="regPassword" placeholder="Min. 6 characters" autocomplete="new-password">
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Zone</label>
+          <div class="field-wrap select-wrap">
+            <span class="field-icon">📍</span>
+            <select id="regZone">
+              <option value="" disabled selected>Select your zone…</option>
+              <option value="1">Zone 1</option>
+              <option value="2">Zone 2</option>
+              <option value="3">Zone 3</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="regBtn" onclick="doRegister()">Create Account →</button>
+
+        <div class="switch-link">
+          Already have an account? <a onclick="switchMode('login')">Sign in</a>
+        </div>
+        <div class="footer-note">Kerala Forest Department · Erattupetta Range<br>© 2025 WildWatch · Authorised use only
+        </div>
+      </div>
+
+    </div><!-- /card-body -->
+  </div><!-- /card -->
+
+  <script>
+    let role = 'officer';
+
+    /* ── Mode: login / register ── */
+    function switchMode(mode) {
+      const panels = ['login', 'register'];
+      panels.forEach(p => document.getElementById('panel-' + p).classList.toggle('active', p === mode));
+      clearMessages();
+      // Scroll to top of page when switching panels
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* ── Role tabs (login panel only) ── */
+    function switchRole(r) {
+      role = r;
+      document.getElementById('tab-officer').classList.toggle('active', r === 'officer');
+      document.getElementById('tab-user').classList.toggle('active', r === 'user');
+      document.getElementById('loginError').style.display = 'none';
+    }
+
+    function clearMessages() {
+      ['loginError', 'regError', 'regSuccess'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+    }
+
+    /* ── Sign In ── */
+    async function doLogin() {
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const err = document.getElementById('loginError');
+      const btn = document.getElementById('loginBtn');
+
+      err.style.display = 'none';
+      if (!username || !password) {
+        err.textContent = 'Please enter your username and password.';
+        err.style.display = 'block';
+        return;
+      }
+
+      btn.textContent = 'Signing in…';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role, username, password })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          window.location.href = data.redirect;
+        } else {
+          err.textContent = data.msg || 'Incorrect credentials.';
+          err.style.display = 'block';
+          btn.textContent = 'Sign In →';
+          btn.disabled = false;
+          document.getElementById('loginPassword').value = '';
+        }
+      } catch (e) {
+        err.textContent = 'Network error. Please try again.';
+        err.style.display = 'block';
+        btn.textContent = 'Sign In →';
+        btn.disabled = false;
+      }
+    }
+
+    /* ── Sign Up ── */
+    async function doRegister() {
+      const name = document.getElementById('regName').value.trim();
+      const phone = document.getElementById('regPhone').value.trim();
+      const username = document.getElementById('regUsername').value.trim();
+      const password = document.getElementById('regPassword').value;
+      const zone = document.getElementById('regZone').value;
+
+      const err = document.getElementById('regError');
+      const ok = document.getElementById('regSuccess');
+      const btn = document.getElementById('regBtn');
+
+      err.style.display = 'none';
+      ok.style.display = 'none';
+
+      // Client-side validation
+      if (!name) { showRegError('Please enter your full name.'); return; }
+      if (!phone || !/^\d{7,15}$/.test(phone.replace(/\s/g, ''))) {
+        showRegError('Please enter a valid phone number (7–15 digits).');
+        return;
+      }
+      if (!username || username.length < 3) {
+        showRegError('Username must be at least 3 characters.');
+        return;
+      }
+      if (!password || password.length < 6) {
+        showRegError('Password must be at least 6 characters.');
+        return;
+      }
+      if (!zone) { showRegError('Please select your zone.'); return; }
+
+      btn.textContent = 'Creating account…';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, phone, username, password, zone_id: parseInt(zone) })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          ok.style.display = 'block';
+          // Clear form
+          ['regName', 'regPhone', 'regUsername', 'regPassword'].forEach(id => document.getElementById(id).value = '');
+          document.getElementById('regZone').selectedIndex = 0;
+          btn.textContent = 'Create Account →';
+          btn.disabled = false;
+          // Switch to login after 2 s
+          setTimeout(() => switchMode('login'), 2000);
+        } else {
+          showRegError(data.msg || 'Registration failed. Please try again.');
+          btn.textContent = 'Create Account →';
+          btn.disabled = false;
+        }
+      } catch (e) {
+        showRegError('Network error. Please try again.');
+        btn.textContent = 'Create Account →';
+        btn.disabled = false;
+      }
+    }
+
+    function showRegError(msg) {
+      const el = document.getElementById('regError');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    /* Enter key handling */
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      const loginActive = document.getElementById('panel-login').classList.contains('active');
+      if (loginActive) doLogin();
+      else doRegister();
+    });
+  </script>
+</body>
+
+</html>

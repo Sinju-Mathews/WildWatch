@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WildWatch — Community Alerts</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --forest:#1b4332;--forest-mid:#2d6a4f;--forest-light:#40916c;
+  --leaf:#52b788;--leaf-bright:#74c69d;--leaf-pale:#d8f3dc;
+  --bg:#f0f7f2;--panel:#fff;--border:#d4e8db;
+  --text-dark:#1a2e1f;--text-mid:#3d6b4f;--text-light:#74a882;
+  --amber:#e9c46a;--amber-bg:#fef9ec;--amber-border:#f0d060;
+  --danger:#e63946;--danger-bg:#fde8ea;--danger-border:#f5b8bc;--danger-deep:#c1121f;
+  --safe-bg:#d8f3dc;--shadow:0 2px 12px rgba(27,67,50,.08);
+}
+html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text-dark);}
+header{background:linear-gradient(135deg,var(--forest) 0%,var(--forest-mid) 100%);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:60px;box-shadow:0 2px 12px rgba(0,0,0,.15);position:sticky;top:0;z-index:100;}
+.hdr-logo{display:flex;align-items:center;gap:10px;}
+.hdr-logo-icon{font-size:1.4rem;}
+.hdr-logo-name{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:#fff;}
+.hdr-logo-sub{font-size:.6rem;color:var(--leaf-bright);font-weight:600;letter-spacing:.08em;text-transform:uppercase;}
+.hdr-right{display:flex;align-items:center;gap:10px;}
+.zone-badge{background:rgba(82,183,136,.15);border:1px solid rgba(82,183,136,.3);border-radius:20px;padding:4px 13px;font-size:.76rem;font-weight:700;color:var(--leaf-bright);}
+.safe-status{display:flex;align-items:center;gap:5px;background:rgba(82,183,136,.15);border:1px solid rgba(82,183,136,.3);border-radius:20px;padding:4px 12px;font-size:.76rem;font-weight:700;color:var(--leaf-bright);transition:all .4s;}
+.safe-status.alert-mode{background:rgba(230,57,70,.2);border-color:rgba(230,57,70,.4);color:#ffaaaa;}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--leaf-bright);box-shadow:0 0 6px var(--leaf-bright);animation:pulse 1.5s ease-in-out infinite;}
+.status-dot.red{background:#ff6b6b;box-shadow:0 0 6px #ff6b6b;animation:blink .6s step-end infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.7);}}
+@keyframes blink{50%{opacity:0;}}
+.btn-logout{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:rgba(255,255,255,.7);font-family:'Nunito',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;padding:5px 12px;transition:all .2s;}
+.btn-logout:hover{background:rgba(255,255,255,.18);}
+.emergency-banner{background:linear-gradient(90deg,var(--danger-deep) 0%,var(--danger) 100%);color:#fff;padding:13px 18px;display:none;align-items:center;gap:12px;animation:bannerIn .4s ease;}
+@keyframes bannerIn{from{transform:translateY(-100%);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.emergency-banner.show{display:flex;}
+.eb-icon{font-size:1.9rem;animation:shake .3s ease infinite alternate;}
+@keyframes shake{from{transform:rotate(-5deg);}to{transform:rotate(5deg);}}
+.eb-title{font-size:.96rem;font-weight:800;letter-spacing:.02em;}
+.eb-desc{font-size:.8rem;opacity:.9;margin-top:2px;}
+.eb-close{margin-left:auto;background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:7px;padding:5px 11px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;font-size:.76rem;flex-shrink:0;}
+.container{max-width:780px;margin:0 auto;padding:18px 14px;}
+.status-hero{border-radius:17px;padding:22px 22px 18px;margin-bottom:18px;display:flex;align-items:center;gap:16px;border:2px solid var(--border);background:var(--panel);box-shadow:var(--shadow);transition:all .4s;}
+.status-hero.safe{border-color:rgba(82,183,136,.4);background:linear-gradient(135deg,#f0faf4 0%,#fff 100%);}
+.status-hero.danger{border-color:var(--danger-border);background:linear-gradient(135deg,#fde8ea 0%,#fff 100%);}
+.hero-icon{font-size:2.8rem;transition:all .3s;}
+.hero-title{font-size:1.25rem;font-weight:900;color:var(--text-dark);}
+.hero-sub{font-size:.82rem;color:var(--text-mid);font-weight:600;margin-top:3px;}
+.hero-time{font-size:.7rem;color:var(--text-light);margin-top:5px;font-weight:600;}
+.tip-box{background:var(--amber-bg);border:1.5px solid var(--amber-border);border-radius:13px;padding:13px 15px;margin-bottom:18px;display:none;}
+.tip-box.show{display:block;animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+.tip-title{font-weight:800;font-size:.88rem;color:var(--text-dark);margin-bottom:7px;}
+.tip-list{list-style:none;display:flex;flex-direction:column;gap:5px;}
+.tip-list li{font-size:.8rem;font-weight:600;color:var(--text-mid);display:flex;align-items:flex-start;gap:6px;}
+.tip-list li::before{content:'•';color:var(--amber);font-size:.9rem;flex-shrink:0;}
+.section-label{font-size:.7rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.1em;margin-bottom:9px;display:flex;align-items:center;gap:5px;}
+.alert-card{background:var(--panel);border-radius:15px;border:1.5px solid var(--border);box-shadow:var(--shadow);overflow:hidden;margin-bottom:11px;animation:cardIn .35s cubic-bezier(.34,1.56,.64,1);transition:box-shadow .2s;}
+.alert-card:hover{box-shadow:0 7px 24px rgba(27,67,50,.1);}
+@keyframes cardIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.alert-card.high{border-left:5px solid var(--danger);border-color:var(--danger-border);}
+.alert-card.medium{border-left:5px solid var(--amber);border-color:var(--amber-border);}
+.alert-card.low{border-left:5px solid var(--leaf);border-color:rgba(82,183,136,.4);}
+.ac-header{padding:13px 15px 9px;display:flex;align-items:center;gap:11px;}
+.ac-animal-icon{font-size:2.2rem;}
+.ac-info{flex:1;}
+.ac-name{font-size:1.05rem;font-weight:900;color:var(--text-dark);}
+.ac-location{font-size:.76rem;font-weight:600;color:var(--text-mid);margin-top:2px;}
+.ac-time{font-size:.7rem;color:var(--text-light);margin-top:2px;font-weight:600;}
+.risk-badge{padding:4px 11px;border-radius:7px;font-size:.7rem;font-weight:800;letter-spacing:.04em;flex-shrink:0;}
+.risk-high{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-border);}
+.risk-med{background:var(--amber-bg);color:#8a6000;border:1px solid var(--amber-border);}
+.risk-low{background:var(--safe-bg);color:var(--forest-mid);border:1px solid rgba(82,183,136,.3);}
+.ac-snapshot{width:100%;max-height:200px;object-fit:cover;display:block;cursor:pointer;transition:opacity .2s;}
+.ac-snapshot:hover{opacity:.9;}
+.ac-snapshot-placeholder{width:100%;height:100px;background:linear-gradient(135deg,#0d2818,#1b4332);display:flex;align-items:center;justify-content:center;gap:7px;color:rgba(255,255,255,.35);font-size:.76rem;font-weight:600;}
+.ac-footer{padding:9px 15px 13px;display:flex;align-items:center;gap:9px;}
+.conf-row{display:flex;align-items:center;gap:7px;flex:1;}
+.conf-label{font-size:.68rem;font-weight:600;color:var(--text-light);}
+.conf-bar-wrap{flex:1;height:5px;background:#edf3ef;border-radius:3px;overflow:hidden;}
+.conf-bar{height:100%;border-radius:3px;transition:width .6s ease;}
+.conf-bar.high{background:var(--danger);}
+.conf-bar.med{background:var(--amber);}
+.conf-bar.low{background:var(--leaf);}
+.conf-pct{font-size:.7rem;font-family:'Nunito',sans-serif;font-weight:700;color:var(--text-mid);}
+.btn-report{background:var(--forest);color:#fff;border:none;border-radius:8px;padding:6px 13px;font-family:'Nunito',sans-serif;font-size:.73rem;font-weight:700;cursor:pointer;transition:all .15s;flex-shrink:0;}
+.btn-report:hover{background:var(--forest-mid);}
+.empty-state{background:var(--panel);border-radius:15px;border:1px solid var(--border);padding:44px 22px;text-align:center;box-shadow:var(--shadow);}
+.empty-icon{font-size:2.8rem;margin-bottom:10px;}
+.empty-text{font-size:.9rem;font-weight:700;color:var(--text-mid);}
+.empty-sub{font-size:.76rem;color:var(--text-light);margin-top:3px;font-weight:600;}
+.safe-banner{background:linear-gradient(135deg,var(--forest) 0%,var(--forest-mid) 100%);border-radius:13px;padding:16px 18px;margin-top:18px;display:flex;align-items:center;gap:13px;color:#fff;}
+.sb-icon{font-size:1.8rem;}
+.sb-title{font-weight:800;font-size:.92rem;}
+.sb-sub{font-size:.74rem;color:rgba(255,255,255,.7);margin-top:2px;font-weight:600;}
+.helpline{margin-left:auto;text-align:right;flex-shrink:0;}
+.helpline-num{font-size:.95rem;font-weight:900;letter-spacing:.02em;}
+.helpline-label{font-size:.62rem;color:rgba(255,255,255,.6);font-weight:600;letter-spacing:.06em;text-transform:uppercase;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-img{max-width:92vw;max-height:88vh;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.6);}
+.modal-close{position:absolute;top:14px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 13px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;font-size:.82rem;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-logo">
+    <div class="hdr-logo-icon">🦁</div>
+    <div>
+      <div class="hdr-logo-name">WildWatch</div>
+      <div class="hdr-logo-sub">Community Alerts</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="zone-badge" id="zoneBadge">📍 Zone —</div>
+    <div class="safe-status" id="statusBadge"><div class="status-dot" id="statusDot"></div><span id="statusText">Area Safe</span></div>
+    <button class="btn-logout" onclick="window.location.href='/logout'">← Sign Out</button>
+  </div>
+</header>
+
+<div class="emergency-banner" id="emergencyBanner">
+  <div class="eb-icon">🚨</div>
+  <div>
+    <div class="eb-title" id="ebTitle">DANGER — Wild Animal Detected Nearby</div>
+    <div class="eb-desc" id="ebDesc">Stay indoors. Do not approach the animal.</div>
+  </div>
+  <button class="eb-close" onclick="closeBanner()">Dismiss</button>
+</div>
+
+<div class="container">
+
+  <div class="status-hero safe" id="statusHero">
+    <div class="hero-icon" id="heroIcon">✅</div>
+    <div>
+      <div class="hero-title" id="heroTitle">Your Area is Safe</div>
+      <div class="hero-sub" id="heroSub">No dangerous animals detected near your zone. Stay alert and follow safety guidelines.</div>
+      <div class="hero-time" id="heroTime">Updated just now</div>
+    </div>
+  </div>
+
+  <div class="tip-box" id="tipBox">
+    <div class="tip-title">⚠️ Safety Guidelines — Please Read</div>
+    <ul class="tip-list">
+      <li>Stay indoors and keep doors and windows closed</li>
+      <li>Do not go near the forest edge or agricultural fields</li>
+      <li>Keep children and pets inside until the all-clear</li>
+      <li>Do not attempt to chase or photograph the animal</li>
+      <li>Alert your neighbours and call the forest department</li>
+    </ul>
+  </div>
+
+  <div class="section-label" id="sectionLabel">🔔 Recent Alerts — Zone <span id="zoneNum">—</span></div>
+  <div id="alertContainer">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🌿</div>
+      <div class="empty-text">No alerts in your zone</div>
+      <div class="empty-sub">You will be notified immediately when a dangerous animal is detected</div>
+    </div>
+  </div>
+
+  <div class="safe-banner">
+    <div class="sb-icon">🌲</div>
+    <div>
+      <div class="sb-title">Kerala Forest Department</div>
+      <div class="sb-sub">Erattupetta Range — 24/7 Monitoring Active</div>
+    </div>
+    <div class="helpline">
+      <div class="helpline-num">📞 1800-425-4733</div>
+      <div class="helpline-label">Forest Helpline</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="snapModal" onclick="closeModal()">
+  <img class="modal-img" id="snapModalImg" src="" alt="Snapshot">
+  <button class="modal-close" onclick="closeModal()">✕ Close</button>
+</div>
+
+<div id="notifPopup" style="position:fixed;bottom:22px;right:18px;max-width:310px;z-index:300;display:none;">
+  <div style="background:var(--panel);border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,.18);border:1.5px solid var(--danger-border);overflow:hidden;animation:cardIn .4s cubic-bezier(.34,1.56,.64,1);">
+    <div style="background:var(--danger);padding:9px 13px;display:flex;align-items:center;gap:7px;">
+      <span style="font-size:1rem;">🚨</span>
+      <span style="font-weight:800;font-size:.82rem;color:#fff;letter-spacing:.02em;">WILDLIFE ALERT</span>
+      <button onclick="document.getElementById('notifPopup').style.display='none'" style="margin-left:auto;background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:5px;padding:2px 7px;cursor:pointer;font-size:.72rem;font-weight:700;">✕</button>
+    </div>
+    <div style="padding:13px 15px;display:flex;gap:11px;align-items:center;">
+      <div id="notifIcon" style="font-size:2rem;flex-shrink:0;"></div>
+      <div>
+        <div id="notifTitle" style="font-weight:800;font-size:.9rem;color:var(--text-dark);"></div>
+        <div id="notifDesc" style="font-size:.73rem;color:var(--text-mid);font-weight:600;margin-top:2px;"></div>
+        <div id="notifTime" style="font-size:.66rem;color:var(--text-light);margin-top:3px;font-weight:600;"></div>
+      </div>
+    </div>
+    <div style="padding:0 15px 13px;">
+      <button onclick="document.getElementById('notifPopup').style.display='none'" style="width:100%;background:var(--forest);color:#fff;border:none;border-radius:8px;padding:8px;font-family:'Nunito',sans-serif;font-weight:700;font-size:.8rem;cursor:pointer;">Understood — Stay Safe</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const zoneId = parseInt(urlParams.get('zone') || '1');
+document.getElementById('zoneBadge').textContent = `📍 Zone ${zoneId}`;
+document.getElementById('zoneNum').textContent = zoneId;
+
+const icons={elephant:'🐘',leopard:'🐆',sambar_deer:'🦌',wild_boar:'🐗'};
+const risks={elephant:'high',leopard:'high',sambar_deer:'low',wild_boar:'medium'};
+const riskLabels={high:'⚠️ DANGER',medium:'⚠ CAUTION',low:'ℹ SPOTTED'};
+const riskBadge={high:'risk-high',medium:'risk-med',low:'risk-low'};
+const confBarClass={high:'high',medium:'med',low:'low'};
+const safetyTips={
+  elephant:'Elephants can charge without warning. Move away slowly; never run or block their path.',
+  leopard:'Leopard spotted nearby. Do not go outdoors alone, especially after dark. Keep pets inside.',
+  wild_boar:'Wild boar can be aggressive if cornered. Keep children and pets indoors.',
+  sambar_deer:'Sambar deer spotted — no immediate danger. Maintain safe distance.'
+};
+const MAX_ALERTS = 5;
+let hasDanger = false;
+
+// ── FIX: safe snapshot helper ─────────────────────────────────
+function safeSnap(snapshot) {
+  if (!snapshot || snapshot === 'null' || snapshot === 'undefined' || snapshot === 'None') return null;
+  return snapshot;
+}
+
+function showNotif(species, conf) {
+  document.getElementById('notifIcon').textContent = icons[species] || '🐾';
+  document.getElementById('notifTitle').textContent = `${species.replace('_',' ').replace(/\b\w/g,c=>c.toUpperCase())} Detected!`;
+  document.getElementById('notifDesc').textContent = `Near your zone. Confidence: ${Math.round(conf*100)}%`;
+  document.getElementById('notifTime').textContent = new Date().toLocaleTimeString('en-IN');
+  const p = document.getElementById('notifPopup');
+  p.style.display = 'block';
+  setTimeout(() => { p.style.display = 'none'; }, 9000);
+}
+
+function addAlert(d) {
+  const { species, confidence, risk, time: t } = d;
+
+  // ── FIX: normalise snapshot — accept both field names, strip falsy values ──
+  const snapSrc = safeSnap(d.snapshot || d.snapshot_path || null);
+
+  document.getElementById('emptyState')?.remove();
+
+  if (risk === 'high') {
+    hasDanger = true;
+    document.getElementById('statusHero').className = 'status-hero danger';
+    document.getElementById('heroIcon').textContent = '🚨';
+    document.getElementById('heroTitle').textContent = 'DANGER — Wild Animal Nearby!';
+    document.getElementById('heroSub').textContent = safetyTips[species] || 'Stay indoors and contact forest department.';
+    document.getElementById('heroTime').textContent = 'Alert received at ' + t;
+    document.getElementById('ebTitle').textContent = `DANGER — ${species.replace('_',' ').replace(/\b\w/g,c=>c.toUpperCase())} Detected In Your Zone`;
+    document.getElementById('ebDesc').textContent = safetyTips[species] || 'Stay indoors.';
+    document.getElementById('emergencyBanner').classList.add('show');
+    document.getElementById('statusBadge').classList.add('alert-mode');
+    document.getElementById('statusDot').classList.add('red');
+    document.getElementById('statusText').textContent = '⚠ ALERT';
+    document.getElementById('tipBox').classList.add('show');
+    showNotif(species, confidence);
+  } else if (!hasDanger) {
+    document.getElementById('heroIcon').textContent = '👀';
+    document.getElementById('heroTitle').textContent = 'Animal Activity Detected';
+    document.getElementById('heroSub').textContent = safetyTips[species] || 'Stay cautious.';
+    document.getElementById('heroTime').textContent = 'Updated at ' + t;
+  }
+
+  const confPct = Math.round(confidence * 100);
+  const card = document.createElement('div');
+  card.className = `alert-card ${risk}`;
+
+  // ── FIX: only render img tag when snapSrc is valid; add onerror fallback ──
+  let snapHTML;
+  if (snapSrc) {
+    snapHTML = `<img class="ac-snapshot" src="${snapSrc}" alt="Detection snapshot"
+      onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+      onclick="openModal('${snapSrc}')">
+      <div class="ac-snapshot-placeholder" style="display:none;">📷 &nbsp;Snapshot unavailable — CAM_0${d.zone_id||zoneId}</div>`;
+  } else {
+    snapHTML = `<div class="ac-snapshot-placeholder">📷 &nbsp;Detection snapshot from CAM_0${d.zone_id||zoneId}</div>`;
+  }
+
+  card.innerHTML = `
+    <div class="ac-header">
+      <div class="ac-animal-icon">${icons[species]||'🐾'}</div>
+      <div class="ac-info">
+        <div class="ac-name">${species.replace('_',' ').replace(/\b\w/g,c=>c.toUpperCase())}</div>
+        <div class="ac-location">📍 Zone ${d.zone_id||zoneId} — Erattupetta Forest Edge</div>
+        <div class="ac-time">🕐 ${t} · CAM_0${d.zone_id||zoneId}</div>
+      </div>
+      <div class="risk-badge ${riskBadge[risk]}">${riskLabels[risk]}</div>
+    </div>
+    ${snapHTML}
+    <div class="ac-footer">
+      <div class="conf-row">
+        <span class="conf-label">AI Confidence</span>
+        <div class="conf-bar-wrap"><div class="conf-bar ${confBarClass[risk]}" style="width:${confPct}%"></div></div>
+        <span class="conf-pct">${confPct}%</span>
+      </div>
+      <button class="btn-report" onclick="reportSighting('${species}')">Report Sighting</button>
+    </div>`;
+
+  const container = document.getElementById('alertContainer');
+  container.insertBefore(card, container.firstChild);
+  while (container.children.length > MAX_ALERTS) container.removeChild(container.lastChild);
+}
+
+function reportSighting(species) {
+  alert(`Report for ${species.replace('_',' ')} submitted to Forest Department.\nThank you for helping protect the community.`);
+}
+function closeBanner() { document.getElementById('emergencyBanner').classList.remove('show'); }
+
+// ── FIX: openModal guards against null/bad values ──
+function openModal(src) {
+  const clean = safeSnap(src);
+  if (!clean) return;
+  document.getElementById('snapModalImg').src = clean;
+  document.getElementById('snapModal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('snapModal').classList.remove('open');
+  document.getElementById('snapModalImg').src = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// SSE
+const es = new EventSource(`/alerts/${zoneId}`);
+es.onmessage = function(e) {
+  const d = JSON.parse(e.data);
+  if (d.type === 'connected') return;
+  addAlert(d);
+};
+es.onerror = function() {
+  console.warn('SSE disconnected, retrying...');
+};
+
+// ── FIX: loadRecent normalises both snapshot field names ──
+async function loadRecent() {
+  try {
+    const r = await fetch(`/api/detections?zone_id=${zoneId}&limit=5`);
+    const rows = await r.json();
+    rows.forEach(row => {
+      addAlert({
+        species:    row.species,
+        confidence: row.confidence,
+        risk:       row.risk_level,
+        // accept whichever field name the API returns
+        snapshot:   safeSnap(row.snapshot || row.snapshot_path || null),
+        time:       row.detected_at || row.time || '',
+        zone_id:    row.zone_id
+      });
+    });
+  } catch(e) { console.warn('Could not load recent:', e); }
+}
+loadRecent();
+</script>
+</body>
+</html>

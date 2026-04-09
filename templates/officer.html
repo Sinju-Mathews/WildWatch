@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WildWatch — Officer Dashboard</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@700&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --forest: #1b4332; --forest-mid: #2d6a4f; --forest-light: #40916c;
+      --leaf: #52b788; --leaf-bright: #74c69d; --leaf-pale: #d8f3dc;
+      --bg: #f0f7f2; --panel: #fff; --border: #d4e8db; --border-strong: #b7d5c0;
+      --text-dark: #1a2e1f; --text-mid: #3d6b4f; --text-light: #74a882;
+      --amber: #e9c46a; --amber-bg: #fef9ec; --amber-border: #f4d882;
+      --danger: #e63946; --danger-bg: #fde8ea; --danger-border: #f5b8bc;
+      --safe: #52b788; --safe-bg: #d8f3dc; --shadow: 0 2px 12px rgba(27,67,50,.08);
+    }
+    html, body { height: 100%; font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text-dark); }
+    .layout { display: flex; height: 100vh; overflow: hidden; }
+    .sidebar { width: 220px; flex-shrink: 0; background: var(--forest); display: flex; flex-direction: column; box-shadow: 2px 0 12px rgba(0,0,0,.15); z-index: 10; }
+    .sidebar-logo { padding: 20px 18px 16px; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; gap: 10px; }
+    .logo-icon { font-size: 1.5rem; }
+    .logo-text { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; color: #fff; }
+    .logo-sub { font-size: .62rem; color: rgba(255,255,255,.45); letter-spacing: .08em; text-transform: uppercase; }
+    .sidebar-user { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; gap: 9px; }
+    .user-avatar { width: 32px; height: 32px; background: rgba(82,183,136,.3); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: .9rem; border: 1px solid rgba(82,183,136,.3); }
+    .user-name { font-size: .8rem; font-weight: 700; color: #fff; }
+    .user-role { font-size: .62rem; color: var(--leaf-bright); letter-spacing: .04em; }
+    .nav { flex: 1; padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; }
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: 9px; cursor: pointer; transition: all .2s; color: rgba(255,255,255,.55); font-weight: 600; font-size: .83rem; border: none; background: none; width: 100%; text-align: left; }
+    .nav-item:hover { background: rgba(82,183,136,.12); color: rgba(255,255,255,.85); }
+    .nav-item.active { background: rgba(82,183,136,.2); color: #fff; }
+    .nav-icon { font-size: .95rem; flex-shrink: 0; }
+    .nav-badge { margin-left: auto; background: var(--danger); color: #fff; border-radius: 5px; padding: 1px 6px; font-size: .62rem; font-family: 'JetBrains Mono', monospace; }
+    .sidebar-bottom { padding: 12px 16px; border-top: 1px solid rgba(255,255,255,.08); }
+    .btn-logout { width: 100%; padding: 8px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); border-radius: 9px; color: rgba(255,255,255,.5); font-family: 'Nunito', sans-serif; font-size: .78rem; font-weight: 700; cursor: pointer; transition: all .2s; }
+    .btn-logout:hover { background: rgba(230,57,70,.15); border-color: rgba(230,57,70,.3); color: #f5a0a5; }
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .topbar { background: var(--panel); border-bottom: 1px solid var(--border); padding: 12px 22px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; box-shadow: var(--shadow); }
+    .page-title { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); }
+    .page-sub { font-size: .72rem; color: var(--text-light); font-weight: 600; margin-top: 1px; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .live-badge { display: flex; align-items: center; gap: 5px; background: var(--safe-bg); border: 1px solid rgba(82,183,136,.3); border-radius: 20px; padding: 4px 11px; font-size: .73rem; font-weight: 700; color: var(--forest-mid); }
+    .pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--leaf); box-shadow: 0 0 6px var(--leaf); animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.7);} }
+    .sys-time { font-family: 'JetBrains Mono', monospace; font-size: .76rem; color: var(--text-light); }
+    .content { flex: 1; overflow-y: auto; padding: 18px 22px; }
+    .content::-webkit-scrollbar { width: 5px; }
+    .content::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .stats-strip { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 18px; }
+    .stat-card { background: var(--panel); border-radius: 13px; border: 1px solid var(--border); padding: 14px 16px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px; }
+    .stat-icon { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+    .stat-value { font-size: 1.5rem; font-weight: 800; color: var(--text-dark); line-height: 1; }
+    .stat-label { font-size: .68rem; color: var(--text-light); font-weight: 600; margin-top: 2px; text-transform: uppercase; letter-spacing: .04em; }
+    .zones-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+    .zone-card { background: var(--panel); border-radius: 15px; border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+    .zone-header { padding: 10px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #f9fbfa; flex-wrap: nowrap; }
+    .zone-title { font-size: .85rem; font-weight: 800; color: var(--text-dark); }
+    .zone-sub { font-size: .67rem; color: var(--text-light); font-weight: 600; margin-top: 1px; }
+    .rec-badge { display: inline-flex; align-items: center; gap: 4px; background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); border-radius: 6px; padding: 3px 8px; font-size: .62rem; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+    .rec-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--danger); animation: blink 1s step-end infinite; }
+    @keyframes blink { 50%{opacity:0;} }
+    .video-wrap { position: relative; background: #0a1a0f; aspect-ratio: 16/9; }
+    .video-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .cam-label { position: absolute; bottom: 8px; left: 8px; font-family: 'JetBrains Mono', monospace; font-size: .58rem; color: rgba(255,255,255,.6); background: rgba(0,0,0,.5); border-radius: 4px; padding: 3px 7px; backdrop-filter: blur(4px); }
+    .upload-panel { padding: 12px 14px; border-top: 1px solid var(--border); background: #f9fbfa; }
+    .upload-label { font-size: .72rem; font-weight: 700; color: var(--text-mid); margin-bottom: 6px; display: block; }
+    .upload-row { display: flex; gap: 7px; align-items: center; overflow: hidden; }
+    .upload-input { flex: 1; min-width: 0; font-family: 'Nunito', sans-serif; font-size: .75rem; border: 1.5px dashed var(--border-strong); border-radius: 8px; padding: 6px 10px; background: #fff; color: var(--text-mid); cursor: pointer; outline: none; overflow: hidden; }
+    .upload-input:hover { border-color: var(--leaf); }
+    .btn-upload { padding: 6px 13px; background: var(--forest); color: #fff; border: none; border-radius: 8px; font-family: 'Nunito', sans-serif; font-size: .75rem; font-weight: 700; cursor: pointer; transition: all .15s; flex-shrink: 0; }
+    .btn-upload:hover { background: var(--forest-mid); }
+    .btn-stop-stream { padding: 6px 13px; background: var(--danger); color: #fff; border: none; border-radius: 8px; font-family: 'Nunito', sans-serif; font-size: .75rem; font-weight: 700; cursor: pointer; transition: all .15s; flex-shrink: 0; }
+    .btn-stop-stream:hover { background: #c0303a; }
+    .btn-stop-stream:disabled { opacity: .55; cursor: not-allowed; }
+    .upload-status { font-size: .68rem; color: var(--text-light); font-weight: 600; margin-top: 5px; }
+    .two-col { display: grid; grid-template-columns: 1fr 320px; gap: 14px; }
+    .card { background: var(--panel); border-radius: 14px; border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+    .card-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .card-title { font-size: .86rem; font-weight: 800; color: var(--text-dark); }
+    .card-subtitle { font-size: .68rem; color: var(--text-light); font-weight: 600; margin-top: 2px; }
+    .alert-feed { max-height: 280px; overflow-y: auto; padding: 8px; }
+    .alert-feed::-webkit-scrollbar { width: 3px; }
+    .alert-feed::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+    .alert-item { display: flex; gap: 9px; align-items: flex-start; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 6px; cursor: pointer; transition: all .2s; background: var(--panel); }
+    .alert-item:hover { border-color: var(--border-strong); background: #f6fbf7; }
+    .alert-item.danger { border-left: 3px solid var(--danger); background: var(--danger-bg); }
+    .alert-item.warning { border-left: 3px solid var(--amber); background: var(--amber-bg); }
+    .alert-item.safe { border-left: 3px solid var(--safe); background: var(--safe-bg); }
+    .a-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+    .a-name { font-weight: 800; font-size: .85rem; color: var(--text-dark); }
+    .a-meta { font-size: .68rem; color: var(--text-light); font-weight: 600; margin-top: 2px; }
+    .conf-pill { display: inline-block; font-size: .6rem; font-family: 'JetBrains Mono', monospace; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-top: 3px; }
+    .conf-high { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+    .conf-med { background: var(--amber-bg); color: #b07d00; border: 1px solid var(--amber-border); }
+    .conf-low { background: var(--safe-bg); color: var(--forest-mid); border: 1px solid rgba(82,183,136,.3); }
+    .zone-pill { font-size: .58rem; font-family: 'JetBrains Mono', monospace; background: rgba(27,67,50,.1); color: var(--forest); border-radius: 4px; padding: 1px 5px; margin-left: 4px; }
+    .species-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
+    .sp-card { border: 1px solid var(--border); border-radius: 10px; padding: 10px; display: flex; align-items: center; gap: 8px; transition: all .2s; }
+    .sp-card:hover { border-color: var(--border-strong); background: #f6fbf7; }
+    .sp-icon { font-size: 1.4rem; }
+    .sp-name { font-size: .78rem; font-weight: 700; color: var(--text-dark); }
+    .sp-count { font-family: 'JetBrains Mono', monospace; font-size: 1.05rem; font-weight: 600; color: var(--forest-light); margin-left: auto; }
+    .logs-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
+    .filter-row { display: flex; gap: 7px; flex-wrap: wrap; }
+    .filter-btn { padding: 6px 13px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--panel); font-family: 'Nunito', sans-serif; font-size: .76rem; font-weight: 700; color: var(--text-mid); cursor: pointer; transition: all .2s; }
+    .filter-btn:hover, .filter-btn.active { background: var(--forest); border-color: var(--forest); color: #fff; }
+    .log-table { background: var(--panel); border-radius: 15px; border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow); }
+    .log-table table { width: 100%; border-collapse: collapse; }
+    .log-table th { padding: 10px 14px; text-align: left; font-size: .69rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: .05em; background: #f7fbf8; border-bottom: 1px solid var(--border); }
+    .log-table td { padding: 10px 14px; font-size: .81rem; border-bottom: 1px solid var(--border); color: var(--text-dark); }
+    .log-table tr:last-child td { border-bottom: none; }
+    .log-table tr:hover td { background: #f6fbf7; }
+    .badge { display: inline-flex; align-items: center; gap: 3px; font-size: .68rem; font-weight: 700; padding: 2px 8px; border-radius: 5px; }
+    .badge-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+    .badge-warning { background: var(--amber-bg); color: #8a6000; border: 1px solid var(--amber-border); }
+    .badge-safe { background: var(--safe-bg); color: var(--forest-mid); border: 1px solid rgba(82,183,136,.3); }
+    .conf-bar-wrap { width: 55px; height: 4px; background: #edf3ef; border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 4px; }
+    .conf-bar { height: 100%; border-radius: 3px; background: var(--forest-light); }
+    .snap-thumb { width: 40px; height: 30px; object-fit: cover; border-radius: 5px; border: 1px solid var(--border); cursor: pointer; transition: transform .15s; }
+    .snap-thumb:hover { transform: scale(1.1); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 1000; display: none; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal-img { max-width: 90vw; max-height: 85vh; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+    .modal-close { position: absolute; top: 16px; right: 20px; background: rgba(255,255,255,.15); border: none; color: #fff; border-radius: 9px; padding: 7px 14px; cursor: pointer; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: .85rem; }
+    .settings-card { background: var(--panel); border-radius: 15px; border: 1px solid var(--border); max-width: 500px; box-shadow: var(--shadow); }
+    .zone-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.92); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: flex-start; overflow-y: auto; padding: 24px 0 40px; }
+    .zone-modal-overlay.open { display: flex; }
+    .zone-modal-inner { width: 92vw; max-width: 1200px; background: #0a1a0f; border-radius: 16px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,.6); position: relative; margin: auto; }
+    .zone-modal-header { padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,.04); border-bottom: 1px solid rgba(255,255,255,.07); position: sticky; top: 0; z-index: 1; }
+    .zone-modal-title { font-size: 1rem; font-weight: 800; color: #fff; }
+    .zone-modal-close { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15); color: #fff; border-radius: 8px; padding: 7px 16px; cursor: pointer; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: .85rem; transition: background .2s; }
+    .zone-modal-close:hover { background: rgba(230,57,70,.45); border-color: rgba(230,57,70,.5); }
+    .zone-modal-img { width: 100%; display: block; max-height: 80vh; object-fit: contain; }
+    .btn-icon { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 7px; border: 1.5px solid; cursor: pointer; font-family: 'Nunito', sans-serif; font-size: .72rem; font-weight: 700; transition: all .18s; line-height: 1; }
+    .btn-expand { background: rgba(27,67,50,.06); border-color: var(--border-strong); color: var(--text-mid); }
+    .btn-expand:hover { background: var(--forest-mid); border-color: var(--forest-mid); color: #fff; }
+    .btn-activate { background: rgba(82,183,136,.12); border-color: rgba(82,183,136,.4); color: var(--forest-mid); }
+    .btn-activate:hover { background: var(--forest-mid); border-color: var(--forest-mid); color: #fff; }
+    .btn-deactivate { background: rgba(230,57,70,.1); border-color: rgba(230,57,70,.35); color: var(--danger); }
+    .btn-deactivate:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
+    .zone-switcher { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .zone-tab { display: inline-flex; align-items: center; gap: 7px; padding: 8px 18px; border-radius: 10px; border: 1.5px solid var(--border-strong); background: var(--panel); font-family: 'Nunito', sans-serif; font-size: .82rem; font-weight: 700; color: var(--text-mid); cursor: pointer; transition: all .2s; box-shadow: var(--shadow); }
+    .zone-tab:hover { background: var(--forest-mid); border-color: var(--forest-mid); color: #fff; transform: translateY(-1px); }
+    .zone-tab.active { background: var(--forest); border-color: var(--forest); color: #fff; box-shadow: 0 4px 12px rgba(27,67,50,.25); }
+    .zone-tab .tab-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.4); flex-shrink: 0; }
+    .zone-tab.active .tab-dot { background: var(--leaf-bright); box-shadow: 0 0 6px var(--leaf); animation: pulse 1.5s ease-in-out infinite; }
+    .zone-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: nowrap; }
+    .btn-load-old { display: flex; align-items: center; gap: 6px; margin: 14px auto 0; padding: 9px 24px; background: var(--panel); border: 1.5px solid var(--border-strong); border-radius: 10px; color: var(--text-mid); font-family: 'Nunito', sans-serif; font-size: .8rem; font-weight: 700; cursor: pointer; transition: all .2s; }
+    .btn-load-old:hover { background: var(--forest); border-color: var(--forest); color: #fff; }
+    .btn-load-old:disabled { opacity: .45; cursor: not-allowed; }
+    @keyframes spin { from{transform:rotate(0deg);}to{transform:rotate(360deg);} }
+  </style>
+</head>
+
+<body>
+  <div class="layout">
+
+    <nav class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🦁</div>
+        <div>
+          <div class="logo-text">WildWatch</div>
+          <div class="logo-sub">Officer Portal</div>
+        </div>
+      </div>
+      <div class="sidebar-user">
+        <div class="user-avatar">👮</div>
+        <div>
+          <div class="user-name">{{ officer_name }}</div>
+          <div class="user-role">{{ officer_designation }} · {{ officer_range }}</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" onclick="showPage('monitor',this)"><span class="nav-icon">📹</span> Live Monitor</button>
+        <button class="nav-item" onclick="showPage('logs',this)"><span class="nav-icon">📋</span> Detection Logs <span class="nav-badge" id="newBadge">0</span></button>
+        <button class="nav-item" onclick="showPage('detect',this)"><span class="nav-icon">🔍</span> Image Detect</button>
+        <button class="nav-item" onclick="showPage('residents',this)"><span class="nav-icon">🏘️</span> Residents</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <button class="btn-logout" onclick="window.location.href='/logout'">← Sign Out</button>
+      </div>
+    </nav>
+
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <div class="page-title" id="pageTitle">Live Monitoring — 3 Zones</div>
+          <div class="page-sub">Forest Range · Detection Active</div>
+        </div>
+        <div class="topbar-right">
+          <div class="live-badge"><div class="pulse"></div> LIVE</div>
+          <div class="sys-time" id="sysTime">--:--:--</div>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <!-- MONITOR PAGE -->
+        <div class="page active" id="page-monitor">
+          <div class="stats-strip">
+            <div class="stat-card"><div class="stat-icon" style="background:#d8f3dc;">📸</div><div><div class="stat-value" id="s-total">0</div><div class="stat-label">Total Detections</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:#fde8ea;">🚨</div><div><div class="stat-value" id="s-high" style="color:var(--danger)">0</div><div class="stat-label">High Risk</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:#fef9ec;">⚠️</div><div><div class="stat-value" id="s-med" style="color:#b07d00">0</div><div class="stat-label">Medium Risk</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:#d8f3dc;">✅</div><div><div class="stat-value" id="s-low" style="color:var(--forest-light)">0</div><div class="stat-label">Low Risk</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:#e8f4fd;">📷</div><div><div class="stat-value">3</div><div class="stat-label">Active Zones</div></div></div>
+          </div>
+
+          <div class="zone-switcher">
+            <button class="zone-tab active" id="zone-tab-1" onclick="switchZone(1,this)"><span class="tab-dot"></span> 📹 Zone 1 — Webcam</button>
+            <button class="zone-tab" id="zone-tab-2" onclick="switchZone(2,this)"><span class="tab-dot"></span> 🎥 Zone 2 — Video</button>
+            <button class="zone-tab" id="zone-tab-3" onclick="switchZone(3,this)"><span class="tab-dot"></span> 🎬 Zone 3 — Video</button>
+          </div>
+
+          <div class="zones-grid">
+            <!-- Zone 1 -->
+            <div class="zone-card" id="zone-card-1">
+              <div class="zone-header">
+                <div style="min-width:0;flex:1;">
+                  <div class="zone-title">📹 Zone 1 — Live</div>
+                  <div class="zone-sub">CAM_01 · 640×480</div>
+                </div>
+                <div class="zone-controls">
+                  <button class="rec-badge" id="rec1" style="border:none;cursor:default;"><div class="rec-dot"></div> REC</button>
+                  <div style="display:flex;flex-direction:column;gap:4px;">
+                    <button class="btn-icon btn-deactivate" id="zone1ToggleBtn" onclick="toggleZone1()" title="Deactivate webcam">⏸ Deactivate</button>
+                    <button class="btn-icon btn-expand" onclick="openZoneModal(1)" title="Full view">⛶ Full View</button>
+                  </div>
+                </div>
+              </div>
+              <div class="video-wrap">
+                <img id="zone1Img" src="" alt="Zone 1 Feed" onerror="this.style.opacity='.3'">
+                <div class="cam-label" id="camLabel1">CAM_01 · Live</div>
+              </div>
+              <div class="upload-panel">
+                <span class="upload-label">Zone 1 sources from live webcam automatically.</span>
+              </div>
+            </div>
+
+            <!-- Zone 2 -->
+            <div class="zone-card" id="zone-card-2">
+              <div class="zone-header">
+                <div style="min-width:0;flex:1;">
+                  <div class="zone-title">🎥 Zone 2 — Video Feed</div>
+                  <div class="zone-sub">CAM_02 · Upload required</div>
+                </div>
+                <div class="zone-controls">
+                  <div class="rec-badge" id="rec2" style="opacity:.4"><div class="rec-dot"></div> IDLE</div>
+                  <button class="btn-icon btn-expand" onclick="openZoneModal(2)" title="Full view">⛶ Full View</button>
+                </div>
+              </div>
+              <div class="video-wrap">
+                <img id="zone2Img" src="" alt="Zone 2 Feed" onerror="this.style.opacity='.3'">
+                <div class="cam-label" id="camLabel2">CAM_02 · Awaiting video</div>
+              </div>
+              <div class="upload-panel">
+                <span class="upload-label" id="upLabel2">Upload patrol video to stream</span>
+                <div class="upload-row" id="upRow2">
+                  <input type="file" class="upload-input" id="vid2" accept="video/*">
+                  <button class="btn-upload" onclick="uploadVideo(2)">▶ Stream</button>
+                </div>
+                <div id="stopRow2" style="display:none;margin-top:6px;">
+                  <button class="btn-stop-stream" id="stopBtn2" onclick="stopVideoZone(2)">⏹ Stop Stream</button>
+                </div>
+                <div class="upload-status" id="upStatus2">No video loaded</div>
+              </div>
+            </div>
+
+            <!-- Zone 3 -->
+            <div class="zone-card" id="zone-card-3">
+              <div class="zone-header">
+                <div style="min-width:0;flex:1;">
+                  <div class="zone-title">🎬 Zone 3 — Video Feed</div>
+                  <div class="zone-sub">CAM_03 · Upload required</div>
+                </div>
+                <div class="zone-controls">
+                  <div class="rec-badge" id="rec3" style="opacity:.4"><div class="rec-dot"></div> IDLE</div>
+                  <button class="btn-icon btn-expand" onclick="openZoneModal(3)" title="Full view">⛶ Full View</button>
+                </div>
+              </div>
+              <div class="video-wrap">
+                <img id="zone3Img" src="" alt="Zone 3 Feed" onerror="this.style.opacity='.3'">
+                <div class="cam-label" id="camLabel3">CAM_03 · Awaiting video</div>
+              </div>
+              <div class="upload-panel">
+                <span class="upload-label" id="upLabel3">Upload patrol video to stream</span>
+                <div class="upload-row" id="upRow3">
+                  <input type="file" class="upload-input" id="vid3" accept="video/*">
+                  <button class="btn-upload" onclick="uploadVideo(3)">▶ Stream</button>
+                </div>
+                <div id="stopRow3" style="display:none;margin-top:6px;">
+                  <button class="btn-stop-stream" id="stopBtn3" onclick="stopVideoZone(3)">⏹ Stop Stream</button>
+                </div>
+                <div class="upload-status" id="upStatus3">No video loaded</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="two-col">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">🔔 Live Alert Feed — All Zones</div>
+                  <div class="card-subtitle">Real-time AI detections</div>
+                </div>
+                <span class="badge badge-danger" id="alertCountBadge">0 new</span>
+              </div>
+              <div class="alert-feed" id="alertFeed">
+                <div id="alertPlaceholder" style="padding:22px;text-align:center;color:var(--text-light);font-size:.8rem;font-weight:600;">Awaiting detections…</div>
+              </div>
+            </div>
+            <div>
+              <div class="card">
+                <div class="card-header"><div class="card-title">🎯 Species Count</div></div>
+                <div class="species-grid">
+                  <div class="sp-card"><span class="sp-icon">🐘</span><div><div class="sp-name">Elephant</div><div style="font-size:.65rem;color:var(--danger);font-weight:600;">HIGH RISK</div></div><div class="sp-count" id="sp-elephant">0</div></div>
+                  <div class="sp-card"><span class="sp-icon">🐆</span><div><div class="sp-name">Leopard</div><div style="font-size:.65rem;color:var(--danger);font-weight:600;">HIGH RISK</div></div><div class="sp-count" id="sp-leopard">0</div></div>
+                  <div class="sp-card"><span class="sp-icon">🦌</span><div><div class="sp-name">Sambar</div><div style="font-size:.65rem;color:var(--leaf);font-weight:600;">LOW RISK</div></div><div class="sp-count" id="sp-sambar_deer">0</div></div>
+                  <div class="sp-card"><span class="sp-icon">🐗</span><div><div class="sp-name">Wild Boar</div><div style="font-size:.65rem;color:#b07d00;font-weight:600;">MEDIUM</div></div><div class="sp-count" id="sp-wild_boar">0</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div><!-- /monitor -->
+
+        <!-- LOGS PAGE -->
+        <div class="page" id="page-logs">
+          <div class="logs-header">
+            <div style="font-size:.8rem;color:var(--text-light);font-weight:600;">All detection events · Session + Database</div>
+            <div class="filter-row">
+              <button class="filter-btn active" onclick="filterLogs('all',this)">All Zones</button>
+              <button class="filter-btn" onclick="filterLogs('1',this)">Zone 1</button>
+              <button class="filter-btn" onclick="filterLogs('2',this)">Zone 2</button>
+              <button class="filter-btn" onclick="filterLogs('3',this)">Zone 3</button>
+              <button class="filter-btn" onclick="filterLogs('high',this)">🔴 High</button>
+              <button class="filter-btn" onclick="filterLogs('medium',this)">🟡 Medium</button>
+              <button class="filter-btn" onclick="filterLogs('low',this)">🟢 Low</button>
+            </div>
+          </div>
+          <div class="log-table">
+            <table>
+              <thead><tr><th>#</th><th>Time</th><th>Zone</th><th>Species</th><th>Risk</th><th>Confidence</th><th>Snapshot</th></tr></thead>
+              <tbody id="logBody"><tr><td colspan="7" style="text-align:center;color:var(--text-light);padding:26px;font-size:.82rem;font-weight:600;">Loading detections…</td></tr></tbody>
+            </table>
+          </div>
+          <button class="btn-load-old" id="btnLoadOld" onclick="loadOldLogs()">⟳ Load Old Logs</button>
+        </div>
+
+        <!-- IMAGE DETECT PAGE -->
+        <div class="page" id="page-detect">
+          <div style="max-width:700px;">
+            <div class="card">
+              <div class="card-header">
+                <div><div class="card-title">🔍 Image Wildlife Detection</div><div class="card-subtitle">Upload an image to detect target species</div></div>
+              </div>
+              <div style="padding:20px;">
+                <div id="dropZone" style="border:2.5px dashed var(--border-strong);border-radius:14px;padding:36px;text-align:center;cursor:pointer;transition:all .2s;background:#f7fbf8;"
+                  onclick="document.getElementById('imgInput').click()"
+                  ondragover="event.preventDefault();this.style.borderColor='var(--leaf)'"
+                  ondragleave="this.style.borderColor='var(--border-strong)'"
+                  ondrop="handleDrop(event)">
+                  <div style="font-size:2.5rem;margin-bottom:10px;">🖼️</div>
+                  <div style="font-weight:700;font-size:.9rem;color:var(--text-mid);">Drag & drop an image here</div>
+                  <div style="font-size:.76rem;color:var(--text-light);margin-top:5px;">or click to browse · JPG, PNG</div>
+                  <input type="file" id="imgInput" accept="image/*" style="display:none" onchange="detectImage(this.files[0])">
+                </div>
+                <div id="detectResult" style="display:none;margin-top:16px;">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div>
+                      <div style="font-size:.73rem;font-weight:700;color:var(--text-mid);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;">Annotated Output</div>
+                      <img id="annotatedImg" style="width:100%;border-radius:11px;border:1px solid var(--border);" alt="Annotated">
+                    </div>
+                    <div>
+                      <div style="font-size:.73rem;font-weight:700;color:var(--text-mid);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;">Detections Found</div>
+                      <div id="detectionList" style="display:flex;flex-direction:column;gap:8px;"></div>
+                    </div>
+                  </div>
+                </div>
+                <div id="detectLoading" style="display:none;padding:32px;text-align:center;">
+                  <div style="font-size:1.8rem;margin-bottom:8px;animation:spin 1s linear infinite;display:inline-block;">⚙️</div>
+                  <div style="font-size:.85rem;font-weight:700;color:var(--text-mid);">Running detection…</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RESIDENTS PAGE -->
+        <div class="page" id="page-residents">
+          <div class="logs-header">
+            <div style="font-size:.8rem;color:var(--text-light);font-weight:600;">All registered residents across zones</div>
+            <div class="filter-row" id="residentFilterRow">
+              <button class="filter-btn active" onclick="filterResidents('zone','all',this)">All Zones</button>
+              <button class="filter-btn" onclick="filterResidents('zone','1',this)">Zone 1</button>
+              <button class="filter-btn" onclick="filterResidents('zone','2',this)">Zone 2</button>
+              <button class="filter-btn" onclick="filterResidents('zone','3',this)">Zone 3</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-bottom:14px;">
+            <div style="position:relative;flex:1;">
+              <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:.9rem;">👤</span>
+              <input type="text" id="resNameSearch" placeholder="Search by name…" style="width:100%;padding:9px 11px 9px 34px;border:1.5px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;font-size:.84rem;color:var(--text-dark);background:#fff;outline:none;transition:border-color .2s;" oninput="applyResidentSearch()" onfocus="this.style.borderColor='var(--leaf)'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+            <div style="position:relative;flex:1;">
+              <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:.9rem;">📱</span>
+              <input type="text" id="resPhoneSearch" placeholder="Search by phone…" style="width:100%;padding:9px 11px 9px 34px;border:1.5px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;font-size:.84rem;color:var(--text-dark);background:#fff;outline:none;transition:border-color .2s;" oninput="applyResidentSearch()" onfocus="this.style.borderColor='var(--leaf)'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+            <button onclick="loadResidents()" style="padding:9px 16px;background:var(--forest);color:#fff;border:none;border-radius:10px;font-family:'Nunito',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;">↺ Refresh</button>
+          </div>
+          <div style="font-size:.75rem;color:var(--text-light);font-weight:600;margin-bottom:10px;" id="resCount">Loading…</div>
+          <div class="log-table">
+            <table>
+              <thead><tr><th>#</th><th>Name</th><th>Username</th><th>Phone</th><th>Zone</th><th>Joined</th></tr></thead>
+              <tbody id="residentBody"><tr><td colspan="6" style="text-align:center;color:var(--text-light);padding:26px;font-size:.82rem;font-weight:600;">Loading residents…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Snapshot Modal -->
+  <div class="modal-overlay" id="snapModal" onclick="closeModal()">
+    <img class="modal-img" id="snapModalImg" src="" alt="Snapshot">
+    <button class="modal-close" onclick="closeModal()">✕ Close</button>
+  </div>
+
+  <!-- Zone Fullscreen Modal -->
+  <div class="zone-modal-overlay" id="zoneModal" onclick="closeZoneModal()">
+    <div class="zone-modal-inner" onclick="event.stopPropagation()">
+      <div class="zone-modal-header">
+        <div class="zone-modal-title" id="zoneModalTitle">Zone Feed</div>
+        <button class="zone-modal-close" onclick="closeZoneModal()">✕ Close Full View</button>
+      </div>
+      <img class="zone-modal-img" id="zoneModalImg" src="" alt="Zone Feed">
+    </div>
+  </div>
+
+  <script>
+    let activeStream = null;
+
+    // ── FIX: safe snapshot helper (same as public.html) ──────────────────
+    function safeSnap(src) {
+      if (!src || src === 'null' || src === 'undefined' || src === 'None') return null;
+      return src;
+    }
+
+    function startStream(zone) {
+      // ── FIX: properly break previous MJPEG connection before switching ──
+      if (activeStream !== null && activeStream !== zone) {
+        const prev = document.getElementById('zone' + activeStream + 'Img');
+        if (prev) {
+          prev.src = '';
+          prev.style.opacity = '.3';
+        }
+      }
+      const img = document.getElementById('zone' + zone + 'Img');
+      if (!img) return;
+      img.style.opacity = '1';
+      img.src = '/video/' + zone + '?t=' + Date.now();
+      activeStream = zone;
+    }
+
+    function switchZone(zone, tabEl) {
+      startStream(zone);
+      startSSE(zone);
+      document.querySelectorAll('.zone-tab').forEach(t => t.classList.remove('active'));
+      const tab = tabEl || document.getElementById('zone-tab-' + zone);
+      if (tab) tab.classList.add('active');
+    }
+
+    function tick() {
+      const n = new Date();
+      document.getElementById('sysTime').textContent = n.toTimeString().split(' ')[0] + ' IST';
+    }
+    setInterval(tick, 1000); tick();
+
+    const pageTitles = { monitor: 'Live Monitoring — 3 Zones', logs: 'Detection Logs', detect: 'Image Detection', residents: 'Residents Directory' };
+    function showPage(id, btn) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      document.getElementById('page-' + id).classList.add('active');
+      if (btn) btn.classList.add('active');
+      document.getElementById('pageTitle').textContent = pageTitles[id] || id;
+      if (id === 'logs') loadLogs();
+      if (id === 'residents') loadResidents();
+    }
+
+    // ── VIDEO UPLOAD ─────────────────────────────────────────────────────
+    async function uploadVideo(zone) {
+      const inp = document.getElementById('vid' + zone);
+      const statusEl = document.getElementById('upStatus' + zone);
+      if (!inp.files.length) { alert('Please select a video file.'); return; }
+      const fd = new FormData();
+      fd.append('video', inp.files[0]);
+      statusEl.textContent = 'Uploading…';
+      try {
+        const r = await fetch('/upload_video/' + zone, { method: 'POST', body: fd });
+        const d = await r.json();
+        if (d.ok) {
+          statusEl.textContent = '✅ ' + d.msg;
+          document.getElementById('rec' + zone).style.opacity = '1';
+          document.getElementById('rec' + zone).innerHTML = '<div class="rec-dot"></div> REC';
+          document.getElementById('camLabel' + zone).textContent = 'CAM_0' + zone + ' · ' + inp.files[0].name;
+          startStream(zone);
+          document.getElementById('upRow' + zone).style.display = 'none';
+          document.getElementById('stopRow' + zone).style.display = 'block';
+          document.getElementById('upLabel' + zone).textContent = 'Streaming: ' + inp.files[0].name;
+        } else {
+          statusEl.textContent = '❌ ' + d.msg;
+        }
+      } catch (e) {
+        statusEl.textContent = '❌ Upload failed';
+      }
+    }
+
+    // ── FIX: STOP VIDEO STREAM ───────────────────────────────────────────
+    async function stopVideoZone(zone) {
+      const stopBtn  = document.getElementById('stopBtn' + zone);
+      const statusEl = document.getElementById('upStatus' + zone);
+      const imgEl    = document.getElementById('zone' + zone + 'Img');
+
+      stopBtn.disabled = true;
+      stopBtn.textContent = 'Stopping…';
+
+      // Step 1: Force-break the browser's MJPEG TCP connection
+      // by pointing the img to a guaranteed-404 path first,
+      // then clearing it. This ensures the browser drops the
+      // persistent multipart HTTP stream immediately.
+      imgEl.src = '/api/stop_video/' + zone + '?_break=1';
+      await new Promise(resolve => setTimeout(resolve, 80));
+      imgEl.src = '';
+      imgEl.style.opacity = '0.3';
+
+      try {
+        // Step 2: Tell the server to stop the zone thread
+        const r = await fetch('/api/stop_video/' + zone);
+        const d = await r.json();
+
+        if (d.ok) {
+          // Clear active stream reference if this was the one showing
+          if (activeStream === zone) activeStream = null;
+
+          // Reset REC badge to IDLE
+          const recEl = document.getElementById('rec' + zone);
+          recEl.style.opacity = '0.4';
+          recEl.innerHTML = '<div class="rec-dot"></div> IDLE';
+
+          // Reset camera label
+          document.getElementById('camLabel' + zone).textContent = 'CAM_0' + zone + ' · Awaiting video';
+
+          // Reset upload panel — show upload row, hide stop button
+          document.getElementById('upLabel' + zone).textContent = 'Upload patrol video to stream';
+          document.getElementById('upRow' + zone).style.display = 'flex';
+          document.getElementById('stopRow' + zone).style.display = 'none';
+
+          // Clear file input so user can select a new file
+          document.getElementById('vid' + zone).value = '';
+
+          statusEl.textContent = '⏹ Stream stopped. Upload a new video to restart.';
+        } else {
+          statusEl.textContent = '❌ Stop failed: ' + (d.msg || 'unknown error');
+          // Restore img if stop failed
+          imgEl.src = '/video/' + zone + '?t=' + Date.now();
+          imgEl.style.opacity = '1';
+        }
+      } catch (e) {
+        statusEl.textContent = '❌ Error stopping stream';
+        // Restore img on network error
+        imgEl.src = '/video/' + zone + '?t=' + Date.now();
+        imgEl.style.opacity = '1';
+      }
+
+      // Always re-enable the button regardless of outcome
+      stopBtn.disabled = false;
+      stopBtn.textContent = '⏹ Stop Stream';
+    }
+
+    // ── SSE ──────────────────────────────────────────────────────────────
+    const icons    = { elephant:'🐘', leopard:'🐆', sambar_deer:'🦌', wild_boar:'🐗' };
+    const riskMap  = { high:'danger', medium:'warning', low:'safe' };
+    const riskLabel = { high:'High Risk', medium:'Medium', low:'Low Risk' };
+    let counts = { elephant:0, leopard:0, sambar_deer:0, wild_boar:0 };
+    let total=0, high=0, med=0, low=0, alertCount=0;
+
+    // ── LOG STORAGE ──────────────────────────────────────────────────────
+    let sessionRows    = [];
+    let dbRowsById     = {};
+    let sessionCounter = 0;
+
+    function getAllRows() {
+      const sessionKeys = new Set(sessionRows.map(r => r.zone_id+'|'+r.species+'|'+r.time));
+      const dbOnly = Object.values(dbRowsById).filter(
+        r => !sessionKeys.has(r.zone_id+'|'+r.species+'|'+(r.time||r.detected_at))
+      );
+      dbOnly.sort((a,b) => b.id - a.id);
+      return [...sessionRows, ...dbOnly];
+    }
+
+    let activeSSE = null;
+
+    function startSSE(zone) {
+      if (activeSSE) activeSSE.close();
+      const es = new EventSource('/alerts/' + zone);
+      es.onmessage = function(e) {
+        const d = JSON.parse(e.data);
+        if (d.type === 'connected') return;
+        handleDetection(d);
+      };
+      es.onerror = function() { setTimeout(() => startSSE(zone), 3000); };
+      activeSSE = es;
+    }
+
+    // Zone 1 toggle
+    let zone1Active = false;
+
+    window.addEventListener('load', async function() {
+      try {
+        const r = await fetch('/api/zone1_toggle');
+        const d = await r.json();
+        zone1Active = d.running;
+        updateZone1ToggleBtn();
+        if (!zone1Active) {
+          document.getElementById('zone1Img').style.opacity = '0.3';
+          document.getElementById('camLabel1').textContent = 'CAM_01 · Deactivated';
+        }
+      } catch(e) { console.error('Zone 1 state sync failed:', e); }
+    });
+
+    async function toggleZone1() {
+      const btn   = document.getElementById('zone1ToggleBtn');
+      const img   = document.getElementById('zone1Img');
+      const label = document.getElementById('camLabel1');
+      const action = zone1Active ? 'stop' : 'start';
+      btn.disabled = true;
+      try {
+        const r = await fetch('/api/zone1_toggle?action=' + action);
+        const d = await r.json();
+        zone1Active = d.running;
+        if (zone1Active) {
+          img.src = '/video/1?t=' + Date.now();
+          img.style.opacity = '1';
+          label.textContent = 'CAM_01 · Live';
+        } else {
+          // ── FIX: break MJPEG stream before clearing ──
+          img.src = '';
+          img.style.opacity = '0.3';
+          label.textContent = 'CAM_01 · Deactivated';
+        }
+        updateZone1ToggleBtn();
+      } catch(e) { console.error('Toggle failed:', e); }
+      btn.disabled = false;
+    }
+
+    function updateZone1ToggleBtn() {
+      const btn = document.getElementById('zone1ToggleBtn');
+      if (zone1Active) {
+        btn.className = 'btn-icon btn-deactivate';
+        btn.textContent = '⏸ Deactivate';
+        btn.title = 'Deactivate webcam to save resources';
+      } else {
+        btn.className = 'btn-icon btn-activate';
+        btn.textContent = '▶ Activate';
+        btn.title = 'Activate webcam';
+      }
+    }
+
+    function handleDetection(d) {
+      const { zone_id, species, confidence, risk, time: t } = d;
+      // ── FIX: normalise snapshot field ──
+      const snapSrc = safeSnap(d.snapshot || d.snapshot_path || null);
+
+      counts[species] = (counts[species] || 0) + 1;
+      total++; if(risk==='high') high++; else if(risk==='medium') med++; else low++;
+      alertCount++;
+
+      document.getElementById('s-total').textContent  = total;
+      document.getElementById('s-high').textContent   = high;
+      document.getElementById('s-med').textContent    = med;
+      document.getElementById('s-low').textContent    = low;
+      document.getElementById('sp-'+species).textContent = counts[species];
+      document.getElementById('alertCountBadge').textContent = alertCount + ' new';
+      document.getElementById('newBadge').textContent = total;
+
+      const confPct    = Math.round(confidence * 100);
+      const rCls       = riskMap[risk] || 'safe';
+      const confClass  = confidence >= .8 ? 'conf-high' : confidence >= .65 ? 'conf-med' : 'conf-low';
+
+      // Live alert feed
+      const feed        = document.getElementById('alertFeed');
+      const placeholder = document.getElementById('alertPlaceholder');
+      if (placeholder) placeholder.remove();
+      const div = document.createElement('div');
+      div.className = `alert-item ${rCls}`;
+
+      // ── FIX: only show thumb if snapSrc is valid, add onerror hide ──
+      const thumbHTML = snapSrc
+        ? `<img src="${snapSrc}" class="snap-thumb"
+             onerror="this.style.display='none'"
+             onclick="openModal('${snapSrc}')">`
+        : '';
+
+      div.innerHTML = `<div class="a-icon">${icons[species]||'🐾'}</div>
+        <div style="flex:1">
+          <div class="a-name">${species.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}
+            <span class="zone-pill">Zone ${zone_id}</span></div>
+          <div class="a-meta">${t} · CAM_0${zone_id}</div>
+          <span class="conf-pill ${confClass}">${confPct}% conf</span>
+        </div>
+        ${thumbHTML}`;
+      feed.prepend(div);
+      while (feed.children.length > 25) feed.removeChild(feed.lastChild);
+
+      // Session rows
+      sessionRows.unshift({
+        _sessionId: ++sessionCounter,
+        zone_id, species, risk,
+        confPct,
+        snapshot: snapSrc,
+        time: t,
+      });
+    }
+
+    // ── LOGS ─────────────────────────────────────────────────────────────
+    let logFilter = 'all';
+
+    function filterLogs(f, btn) {
+      logFilter = f;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      renderLogs(getAllRows());
+    }
+
+    function renderLogs(rows) {
+      const tbody = document.getElementById('logBody');
+      let filtered = rows;
+      if (logFilter === '1' || logFilter === '2' || logFilter === '3')
+        filtered = rows.filter(r => String(r.zone_id) === logFilter);
+      else if (logFilter !== 'all')
+        filtered = rows.filter(r => r.risk === logFilter);
+
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-light);padding:24px;font-size:.8rem;font-weight:600;">No matching detections</td></tr>';
+        return;
+      }
+
+      const badgeClass = { high:'badge-danger', medium:'badge-warning', low:'badge-safe' };
+      tbody.innerHTML = filtered.map((r, idx) => {
+        const displayId = r.id || ('#S' + (r._sessionId || idx+1));
+        const timeStr   = r.time || r.detected_at || '—';
+        const confPct   = r.confPct !== undefined ? r.confPct : Math.round((r.confidence||0)*100);
+        // ── FIX: normalise snapshot before rendering ──
+        const snap      = safeSnap(r.snapshot || r.snapshot_path || null);
+
+        return `<tr>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--text-light);">${displayId}</td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:.78rem;">${timeStr}</td>
+          <td><span class="badge" style="background:rgba(27,67,50,.08);color:var(--forest-mid);border:1px solid var(--border);">Zone ${r.zone_id}</span></td>
+          <td>${icons[r.species]||'🐾'} ${(r.species||'').replace('_',' ').replace(/\b\w/g,c=>c.toUpperCase())}</td>
+          <td><span class="badge ${badgeClass[r.risk]||'badge-safe'}">${riskLabel[r.risk]||r.risk}</span></td>
+          <td><div class="conf-bar-wrap"><div class="conf-bar" style="width:${confPct}%"></div></div>${confPct}%</td>
+          <td>${snap
+            ? `<img src="${snap}" class="snap-thumb" onerror="this.style.display='none'" onclick="openModal('${snap}')">`
+            : '—'}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    async function loadLogs() {
+      try {
+        const r    = await fetch('/api/detections?limit=50');
+        const data = await r.json();
+        data.forEach(d => {
+          if (!dbRowsById[d.id]) {
+            dbRowsById[d.id] = {
+              ...d,
+              confPct:  Math.round((d.confidence||0)*100),
+              // ── FIX: normalise snapshot on load ──
+              snapshot: safeSnap(d.snapshot || d.snapshot_path || null),
+            };
+          }
+        });
+        renderLogs(getAllRows());
+      } catch(e) {
+        console.error('loadLogs failed:', e);
+        renderLogs(getAllRows());
+      }
+    }
+
+    async function loadOldLogs() {
+      const btn = document.getElementById('btnLoadOld');
+      btn.disabled = true;
+      btn.textContent = 'Loading…';
+      try {
+        const dbIds = Object.keys(dbRowsById).map(Number);
+        const minId = dbIds.length ? Math.min(...dbIds) : 0;
+        const url   = minId > 0 ? `/api/detections/old?before_id=${minId}` : '/api/detections/old';
+        const r     = await fetch(url);
+        const data  = await r.json();
+        if (!data.length) { btn.textContent = 'No more old logs'; return; }
+        data.forEach(d => {
+          if (!dbRowsById[d.id]) {
+            dbRowsById[d.id] = {
+              ...d,
+              confPct:  Math.round((d.confidence||0)*100),
+              snapshot: safeSnap(d.snapshot || d.snapshot_path || null),
+            };
+          }
+        });
+        renderLogs(getAllRows());
+        btn.disabled = false;
+        btn.textContent = `⟳ Load More Old Logs (loaded ${data.length})`;
+      } catch(e) {
+        btn.disabled = false;
+        btn.textContent = '⟳ Load Old Logs';
+        console.error('Failed to load old logs:', e);
+      }
+    }
+
+    // ── FIX: openModal guards null/bad values ─────────────────────────
+    function openModal(src) {
+      const clean = safeSnap(src);
+      if (!clean) return;
+      document.getElementById('snapModalImg').src = clean;
+      document.getElementById('snapModal').classList.add('open');
+    }
+    function closeModal() {
+      document.getElementById('snapModal').classList.remove('open');
+      document.getElementById('snapModalImg').src = '';
+    }
+
+    const zoneTitles = { 1:'📹 Zone 1 — Live Webcam', 2:'🎥 Zone 2 — Video Feed', 3:'🎬 Zone 3 — Video Feed' };
+    function openZoneModal(zoneId) {
+      document.getElementById('zoneModalTitle').textContent = zoneTitles[zoneId] || 'Zone '+zoneId;
+      document.getElementById('zoneModalImg').src = '/video/' + zoneId;
+      document.getElementById('zoneModal').classList.add('open');
+    }
+    function closeZoneModal() {
+      document.getElementById('zoneModal').classList.remove('open');
+      document.getElementById('zoneModalImg').src = '';
+    }
+    document.addEventListener('keydown', e => { if(e.key==='Escape'){closeModal();closeZoneModal();} });
+
+    // Image detection
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('dropZone').style.borderColor = 'var(--border-strong)';
+      const f = e.dataTransfer.files[0];
+      if (f && f.type.startsWith('image/')) detectImage(f);
+    }
+    async function detectImage(file) {
+      if (!file) { alert('Please select a valid image file.'); return; }
+      document.getElementById('detectLoading').style.display  = 'block';
+      document.getElementById('detectResult').style.display   = 'none';
+      const fd = new FormData();
+      fd.append('image', file);
+      try {
+        const r = await fetch('/api/detect_image', { method:'POST', body:fd });
+        const d = await r.json();
+        document.getElementById('detectLoading').style.display = 'none';
+        if (d.ok) {
+          document.getElementById('annotatedImg').src = d.annotated;
+          const list = document.getElementById('detectionList');
+          if (!d.detections.length) {
+            list.innerHTML = '<div style="padding:14px;background:#f7fbf8;border-radius:10px;text-align:center;color:var(--text-light);font-size:.82rem;font-weight:600;">✅ No target species detected</div>';
+          } else {
+            const rCls = { high:'badge-danger', medium:'badge-warning', low:'badge-safe' };
+            list.innerHTML = d.detections.map(det => `
+              <div style="border:1px solid var(--border);border-radius:10px;padding:11px 13px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+                  <span style="font-weight:800;font-size:.88rem;">${icons[det.species]||'🐾'} ${det.species.replace('_',' ').replace(/\b\w/g,c=>c.toUpperCase())}</span>
+                  <span class="badge ${rCls[det.risk]||'badge-safe'}">${riskLabel[det.risk]}</span>
+                </div>
+                <div style="font-size:.74rem;color:var(--text-light);font-weight:600;">Confidence: ${Math.round(det.confidence*100)}%</div>
+              </div>`).join('');
+          }
+          document.getElementById('detectResult').style.display = 'block';
+        } else { alert('Detection failed: ' + d.msg); }
+      } catch(e) {
+        document.getElementById('detectLoading').style.display = 'none';
+        alert('Error: ' + e.message);
+      }
+    }
+
+    // ── RESIDENTS ────────────────────────────────────────────────────────
+    let allResidents = [];
+    let resZoneFilter = 'all';
+
+    async function loadResidents() {
+      try {
+        const r = await fetch('/api/residents');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        allResidents = await r.json();
+        applyResidentSearch();
+      } catch(e) {
+        document.getElementById('residentBody').innerHTML =
+          `<tr><td colspan="6" style="text-align:center;color:var(--danger);padding:22px;font-size:.82rem;font-weight:600;">Failed to load residents: ${e.message}</td></tr>`;
+      }
+    }
+
+    function filterResidents(type, value, btn) {
+      if (type === 'zone') {
+        resZoneFilter = value;
+        document.querySelectorAll('#residentFilterRow .filter-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        applyResidentSearch();
+      }
+    }
+
+    function applyResidentSearch() {
+      const nameTerm  = (document.getElementById('resNameSearch').value||'').toLowerCase();
+      const phoneTerm = (document.getElementById('resPhoneSearch').value||'').toLowerCase();
+      let rows = allResidents;
+      if (resZoneFilter !== 'all') rows = rows.filter(r => String(r.zone_id) === resZoneFilter);
+      if (nameTerm)  rows = rows.filter(r => (r.name||'').toLowerCase().includes(nameTerm));
+      if (phoneTerm) rows = rows.filter(r => (r.phone||'').toLowerCase().includes(phoneTerm));
+      document.getElementById('resCount').textContent =
+        `Showing ${rows.length} of ${allResidents.length} resident${allResidents.length!==1?'s':''}`;
+      renderResidents(rows);
+    }
+
+    function renderResidents(rows) {
+      const tbody = document.getElementById('residentBody');
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-light);padding:24px;font-size:.8rem;font-weight:600;">No residents match your filters</td></tr>';
+        return;
+      }
+      const zoneBg    = { 1:'rgba(82,183,136,.12)', 2:'rgba(233,196,106,.15)', 3:'rgba(230,57,70,.08)' };
+      const zoneClr   = { 1:'var(--forest-mid)', 2:'#8a6000', 3:'var(--danger)' };
+      const zoneLabel = { 1:'📷 Zone 1', 2:'🎥 Zone 2', 3:'🎬 Zone 3' };
+      tbody.innerHTML = rows.map((r,i) => `
+        <tr>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--text-light);">${i+1}</td>
+          <td style="font-weight:700;">${r.name}</td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text-mid);">@${r.username}</td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:.78rem;">${r.phone}</td>
+          <td><span style="display:inline-block;padding:3px 9px;border-radius:6px;font-size:.72rem;font-weight:700;background:${zoneBg[r.zone_id]||'#f0f4f1'};color:${zoneClr[r.zone_id]||'var(--text-mid)'};">${zoneLabel[r.zone_id]||'Zone '+r.zone_id}</span></td>
+          <td style="font-size:.78rem;color:var(--text-light);">${r.joined}</td>
+        </tr>`).join('');
+    }
+
+    window.addEventListener('load', () => {
+      setTimeout(() => startStream(1), 1200);
+      setTimeout(() => startSSE(1), 1500);
+    });
+  </script>
+</body>
+</html>
