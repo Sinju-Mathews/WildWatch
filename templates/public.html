@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,7 +20,7 @@
 html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text-dark);}
 header{background:linear-gradient(135deg,var(--forest) 0%,var(--forest-mid) 100%);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:60px;box-shadow:0 2px 12px rgba(0,0,0,.15);position:sticky;top:0;z-index:100;}
 .hdr-logo{display:flex;align-items:center;gap:10px;}
-.hdr-logo-icon{font-size:1.4rem;}
+.hdr-logo-icon{width:42px;height:42px;object-fit:cover;flex-shrink:0;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.25);}
 .hdr-logo-name{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:#fff;}
 .hdr-logo-sub{font-size:.6rem;color:var(--leaf-bright);font-weight:600;letter-spacing:.08em;text-transform:uppercase;}
 .hdr-right{display:flex;align-items:center;gap:10px;}
@@ -107,7 +108,7 @@ header{background:linear-gradient(135deg,var(--forest) 0%,var(--forest-mid) 100%
 
 <header>
   <div class="hdr-logo">
-    <div class="hdr-logo-icon">🦁</div>
+    <img class="hdr-logo-icon" src="{% static 'logo.png' %}" alt="WildWatch Logo">
     <div>
       <div class="hdr-logo-name">WildWatch</div>
       <div class="hdr-logo-sub">Community Alerts</div>

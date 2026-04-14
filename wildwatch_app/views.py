@@ -238,6 +238,7 @@ def _detection_to_dict(r):
         "confidence": float(r.confidence or 0),
         "risk": r.risk_level,
         "snapshot": snap,
+        "date": r.detected_at.strftime("%d %b %Y") if r.detected_at else "",
         "time": r.detected_at.strftime("%H:%M:%S") if r.detected_at else "",
         "detected_at": r.detected_at.strftime("%H:%M:%S") if r.detected_at else "",
     }
